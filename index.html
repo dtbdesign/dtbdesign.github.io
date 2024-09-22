@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Load Geologica font with weights 400 and 700 -->
+    <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Geologica', sans-serif;
+            margin: 0;
+            background-color: #182543;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden; /* Prevent scrolling */
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 20px;
+            background: #0f1729;
+            padding: 40px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+        }
+        .input-group input[type="text"] {
+            flex-grow: 1;
+            padding: 20px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 3px;
+            background-color: #182543;
+            color: white;
+            font-family: 'Geologica', sans-serif;
+            font-size: 18px;
+        }
+        .input-group input[type="text"]::placeholder {
+            color: #8391b0;
+        }
+        .input-group input[type="radio"] {
+            -webkit-appearance: none;
+            appearance: none;
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            margin-left: 10px;
+            outline: none;
+            cursor: pointer;
+        }
+        .input-group input[type="radio"]:checked {
+            background-color: #4AE1FF;
+            border: 2px solid #4AE1FF;
+        }
+        .input-group label {
+            font-size: 16px;
+            color: #182543;
+            margin-left: 5px;
+        }
+        .odds-input {
+            width: calc(50% - 10px);
+            padding: 20px;
+            margin: 20px 0;
+            border: none;
+            border-radius: 3px;
+            background-color: #182543;
+            color: white;
+            font-family: 'Geologica', sans-serif;
+            font-size: 18px;
+        }
+        .odds-input::placeholder {
+            color: #8391b0;
+        }
+        button {
+            width: 100%;
+            padding: 20px;
+            background-color: #4AE1FF;
+            color: black;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-family: 'Geologica', sans-serif;
+            font-size: 18px;
+        }
+        button:hover {
+            background-color: #45a049;
+            color: white;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <form id="parlayForm">
+            <div class="input-group">
+                <input type="text" id="leg1" placeholder="Leg 1" required>
+                <input type="radio" name="pod" id="leg1Radio">
+                <label for="leg1Radio">POD</label>
+            </div>
+            <div class="input-group">
+                <input type="text" id="leg2" placeholder="Leg 2" required>
+                <input type="radio" name="pod" id="leg2Radio">
+                <label for="leg2Radio">POD</label>
+            </div>
+            <div class="input-group">
+                <input type="text" id="leg3" placeholder="Leg 3" required>
+                <input type="radio" name="pod" id="leg3Radio">
+                <label for="leg3Radio">POD</label>
+            </div>
+            <input type="text" id="odds" class="odds-input" placeholder="Odds" required>
+
+            <button type="button" onclick="submitParlay()">Submit Parlay</button>
+        </form>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // List of valid team abbreviations
+        const validTeams = [
+            "ANA", "UTA", "BOS", "BUF", "CAR", "CBJ", "CGY", "CHI", "COL", 
+            "DAL", "DET", "EDM", "FLA", "LAK", "MIN", "MTL", "NJD", "NSH", 
+            "NYI", "NYR", "OTT", "PHI", "PIT", "SEA", "SJS", "STL", "TBL", 
+            "TOR", "VAN", "VGK", "WPG", "WSH"
+        ];
+
+        function validateInput(input) {
+            // Match input to the expected formats
+            const oneTeamBetML = /^[A-Z]{3} ML$/; // e.g., "DET ML"
+            const oneTeamBetSpread = /^[A-Z]{3} [+-]\d+(\.\d+)?$/; // e.g., "DET -1.5" or "DET +1.5"
+            const twoTeamBetOU = /^[A-Z]{3}\/[A-Z]{3} [ou]\d+(\.\d+)?$/; // e.g., "NSH/CHI o6.5"
+            const twoTeamBet1P = /^[A-Z]{3}\/[A-Z]{3} 1P [ou]\d+(\.\d+)?$/; // e.g., "NSH/CHI 1P o1.5"
+
+            if (oneTeamBetML.test(input) || oneTeamBetSpread.test(input)) {
+                const team = input.split(' ')[0];
+                return validTeams.includes(team) ? '' : `Invalid team abbreviation: ${team}`;
+            } else if (twoTeamBetOU.test(input)) {
+                const teams = input.split(' ')[0].split('/');
+                if (!validTeams.includes(teams[0])) {
+                    return `Invalid team abbreviation: ${teams[0]}`;
+                }
+                if (!validTeams.includes(teams[1])) {
+                    return `Invalid team abbreviation: ${teams[1]}`;
+                }
+                return '';
+            } else if (twoTeamBet1P.test(input)) {
+                const teams = input.split(' ')[0].split('/');
+                if (!validTeams.includes(teams[0])) {
+                    return `Invalid team abbreviation: ${teams[0]}`;
+                }
+                if (!validTeams.includes(teams[1])) {
+                    return `Invalid team abbreviation: ${teams[1]}`;
+                }
+                return '';
+            } else {
+                return 'Invalid format. Please ensure team abbreviations and format are correct.';
+            }
+        }
+
+        function submitParlay() {
+            var leg1 = document.getElementById('leg1').value.trim();
+            var leg2 = document.getElementById('leg2').value.trim();
+            var leg3 = document.getElementById('leg3').value.trim();
+            var odds = document.getElementById('odds').value.trim();
+
+            if (!odds) {
+                document.getElementById('result').innerText = 'Make sure to add odds.';
+                return;
+            }
+
+            let errorMessages = [];
+
+            // Validate each leg and accumulate error messages
+            let leg1Error = validateInput(leg1);
+            if (leg1Error) errorMessages.push(`Leg 1 Error: ${leg1Error}`);
+
+            let leg2Error = validateInput(leg2);
+            if (leg2Error) errorMessages.push(`Leg 2 Error: ${leg2Error}`);
+
+            let leg3Error = validateInput(leg3);
+            if (leg3Error) errorMessages.push(`Leg 3 Error: ${leg3Error}`);
+
+            // Ensure exactly one POD is selected
+            const podRadios = document.querySelectorAll('input[name="pod"]');
+            let selectedPOD = null;
+            podRadios.forEach((radio, index) => {
+                if (radio.checked) {
+                    selectedPOD = index;
+                }
+            });
+            if (selectedPOD === null) {
+                errorMessages.push('Please select one "POD" (Play of the Day).');
+            }
+
+            if (errorMessages.length > 0) {
+                document.getElementById('result').innerText = errorMessages.join('\n');
+                return;
+            }
+
+            // Append "(POD)" to the selected leg
+            if (selectedPOD === 0) {
+                leg1 += ' (POD)';
+            } else if (selectedPOD === 1) {
+                leg2 += ' (POD)';
+            } else if (selectedPOD === 2) {
+                leg3 += ' (POD)';
+            }
+
+            // If no errors, proceed to submit
+            google.script.run.withSuccessHandler(function(response) {
+                // Change button color to green on success
+                document.querySelector('button').style.backgroundColor = '#45a049';
+
+                // Show success message with the inputted data
+                document.getElementById('result').innerText = 
+                    `Success! Your parlay has been submitted.\n\n` +
+                    `Leg 1: ${leg1}\n` +
+                    `Leg 2: ${leg2}\n` +
+                    `Leg 3: ${leg3}\n` +
+                    `Odds: ${odds}`;
+                document.getElementById('parlayForm').reset();
+            }).submitParlay(leg1, leg2, leg3, odds);
+        }
+
+        // Move to the next input when "Enter" is pressed
+        document.querySelectorAll('input[type="text"]').forEach((input, index, array) => {
+            input.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    if (index < array.length - 1) {
+                        array[index + 1].focus();
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
