@@ -170,82 +170,90 @@
         }
 
         function submitParlay() {
-            var leg1 = document.getElementById('leg1').value.trim();
-            var leg2 = document.getElementById('leg2').value.trim();
-            var leg3 = document.getElementById('leg3').value.trim();
-            var odds = document.getElementById('odds').value.trim();
+    var leg1 = document.getElementById('leg1').value.trim();
+    var leg2 = document.getElementById('leg2').value.trim();
+    var leg3 = document.getElementById('leg3').value.trim();
+    var odds = document.getElementById('odds').value.trim();
 
-            if (!odds) {
-                document.getElementById('result').innerText = 'Make sure to add odds.';
-                return;
-            }
+    if (!odds) {
+        document.getElementById('result').innerText = 'Make sure to add odds.';
+        return;
+    }
 
-            let errorMessages = [];
+    let errorMessages = [];
 
-            // Validate each leg and accumulate error messages
-            let leg1Error = validateInput(leg1);
-            if (leg1Error) errorMessages.push(`Leg 1 Error: ${leg1Error}`);
+    // Validate each leg and accumulate error messages
+    let leg1Error = validateInput(leg1);
+    if (leg1Error) errorMessages.push(`Leg 1 Error: ${leg1Error}`);
 
-            let leg2Error = validateInput(leg2);
-            if (leg2Error) errorMessages.push(`Leg 2 Error: ${leg2Error}`);
+    let leg2Error = validateInput(leg2);
+    if (leg2Error) errorMessages.push(`Leg 2 Error: ${leg2Error}`);
 
-            let leg3Error = validateInput(leg3);
-            if (leg3Error) errorMessages.push(`Leg 3 Error: ${leg3Error}`);
+    let leg3Error = validateInput(leg3);
+    if (leg3Error) errorMessages.push(`Leg 3 Error: ${leg3Error}`);
 
-            // Ensure exactly one POD is selected
-            const podRadios = document.querySelectorAll('input[name="pod"]');
-            let selectedPOD = null;
-            podRadios.forEach((radio, index) => {
-                if (radio.checked) {
-                    selectedPOD = index;
-                }
-            });
-            if (selectedPOD === null) {
-                errorMessages.push('Please select one "POD" (Play of the Day).');
-            }
-
-            if (errorMessages.length > 0) {
-                document.getElementById('result').innerText = errorMessages.join('\n');
-                return;
-            }
-
-            // Append "(POD)" to the selected leg
-            if (selectedPOD === 0) {
-                leg1 += ' (POD)';
-            } else if (selectedPOD === 1) {
-                leg2 += ' (POD)';
-            } else if (selectedPOD === 2) {
-                leg3 += ' (POD)';
-            }
-
-            // Prepare data to send to Google Apps Script
-            const formData = new URLSearchParams();
-            formData.append('leg1', leg1);
-            formData.append('leg2', leg2);
-            formData.append('leg3', leg3);
-            formData.append('odds', odds);
-
-            // Submit the data to the Google Apps Script
-            fetch('https://script.google.com/macros/s/AKfycbxM90OiOtbyQOwLW75ovTJ_vQns2YpikIyLXkjoaJUmeCxNTd4hkAy0jVQTLT9SX3AkWw/exec', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.text())
-            .then(data => {
-                // Show success message
-                document.getElementById('result').innerText = 
-                    `Success! Your parlay has been submitted.\n\n` +
-                    `Leg 1: ${leg1}\n` +
-                    `Leg 2: ${leg2}\n` +
-                    `Leg 3: ${leg3}\n` +
-                    `Odds: ${odds}`;
-                document.getElementById('parlayForm').reset();
-            })
-            .catch(error => {
-                // Show error message
-                document.getElementById('result').innerText = 'There was an error submitting the form. Please try again later.';
-            });
+    // Ensure exactly one POD is selected
+    const podRadios = document.querySelectorAll('input[name="pod"]');
+    let selectedPOD = null;
+    podRadios.forEach((radio, index) => {
+        if (radio.checked) {
+            selectedPOD = index;
         }
+    });
+    if (selectedPOD === null) {
+        errorMessages.push('Please select one "POD" (Play of the Day).');
+    }
+
+    if (errorMessages.length > 0) {
+        document.getElementById('result').innerText = errorMessages.join('\n');
+        return;
+    }
+
+    // Append "(POD)" to the selected leg
+    if (selectedPOD === 0) {
+        leg1 += ' (POD)';
+    } else if (selectedPOD === 1) {
+        leg2 += ' (POD)';
+    } else if (selectedPOD === 2) {
+        leg3 += ' (POD)';
+    }
+
+    // Prepare data to send to Google Apps Script
+    const formData = new URLSearchParams();
+    formData.append('leg1', leg1);
+    formData.append('leg2', leg2);
+    formData.append('leg3', leg3);
+    formData.append('odds', odds);
+
+    // Submit the data to the Google Apps Script
+    fetch('https://script.google.com/macros/s/AKfycbxM90OiOtbyQOwLW75ovTJ_vQns2YpikIyLXkjoaJUmeCxNTd4hkAy0jVQTLT9SX3AkWw/exec', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json()) // Parse the JSON response
+    .then(data => {
+        console.log(data); // Log the response for debugging
+        if (data.status === 'success') {
+            // Show success message
+            document.getElementById('result').innerText = 
+                `Success! Your parlay has been submitted.\n\n` +
+                `Leg 1: ${leg1}\n` +
+                `Leg 2: ${leg2}\n` +
+                `Leg 3: ${leg3}\n` +
+                `Odds: ${odds}`;
+            document.getElementById('parlayForm').reset();
+        } else {
+            // Show error message
+            document.getElementById('result').innerText = `Error: ${data.message}`;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error); // Log the error for debugging
+        // Show error message if fetch request fails
+        document.getElementById('result').innerText = 'There was an error submitting the form. Please try again later.';
+    });
+}
+
 
         // Move to the next input when "Enter" is pressed
         document.querySelectorAll('input[type="text"]').forEach((input, index, array) => {
