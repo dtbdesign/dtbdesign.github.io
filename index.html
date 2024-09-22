@@ -218,12 +218,21 @@
                 leg3 += ' (POD)';
             }
 
-            // If no errors, proceed to submit
-            google.script.run.withSuccessHandler(function(response) {
-                // Change button color to green on success
-                document.querySelector('button').style.backgroundColor = '#45a049';
+            // Prepare data to send to Google Apps Script
+            const formData = new URLSearchParams();
+            formData.append('leg1', leg1);
+            formData.append('leg2', leg2);
+            formData.append('leg3', leg3);
+            formData.append('odds', odds);
 
-                // Show success message with the inputted data
+            // Submit the data to the Google Apps Script
+            fetch('https://script.google.com/macros/s/AKfycbxM90OiOtbyQOwLW75ovTJ_vQns2YpikIyLXkjoaJUmeCxNTd4hkAy0jVQTLT9SX3AkWw/exec', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(data => {
+                // Show success message
                 document.getElementById('result').innerText = 
                     `Success! Your parlay has been submitted.\n\n` +
                     `Leg 1: ${leg1}\n` +
@@ -231,7 +240,11 @@
                     `Leg 3: ${leg3}\n` +
                     `Odds: ${odds}`;
                 document.getElementById('parlayForm').reset();
-            }).submitParlay(leg1, leg2, leg3, odds);
+            })
+            .catch(error => {
+                // Show error message
+                document.getElementById('result').innerText = 'There was an error submitting the form. Please try again later.';
+            });
         }
 
         // Move to the next input when "Enter" is pressed
